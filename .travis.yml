@@ -1,0 +1,14 @@
+language: erlang
+otp_release:
+- 22.0
+before_install:
+- rebar3 local upgrade
+- export PATH=~/.cache/rebar3/bin:$PATH
+script:
+- rebar3 compile
+deploy:
+  provider: script
+  script: ./hex.sh "${HEX_USERNAME}" "${HEX_KEY}"
+  skip_cleanup: true
+  on:
+    tags: true

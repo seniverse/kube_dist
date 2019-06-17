@@ -1,0 +1,12 @@
+{application, kube_dist,
+ [
+  {description, "Erlang Distribution inside Kubernetes Cluster"},
+  {vsn, "git"},
+  {mod, {kube_dist_app, []}},
+  {registered, [kube_epmd]},
+  {applications, [inets, ssl, jsone]},
+  {env, []},
+  {licenses, ["Apache"]},
+  {links,[{"GitHub","https://github.com/seniverse/kube_dist"}]}
+ ]
+}.
