@@ -94,7 +94,7 @@ watch(#{namespace := Namespace, token := Token}) ->
           {["https://kubernetes.default/api/v1/namespaces/", Namespace, "/endpoints?watch=true"],
            [{"Authorization", "Bearer " ++ Token}]},
           [{ssl, [{cacertfile, "/run/secrets/kubernetes.io/serviceaccount/ca.crt"}]}],
-          [{body_format, binary}, {sync, false}, {stream, self}]),
+          [{body_format, binary}, {sync, false}, {stream, self}, {socket_opts,[{keepalive, true}]}]),
     #{namespace => Namespace, token => Token, ref => Ref}.
 
 handle_changes([Buf]) ->
