@@ -99,8 +99,8 @@ watch(#{namespace := Namespace, token := Token}) ->
 
 handle_changes([Buf]) ->
     Buf;
-handle_changes([Data|Rest]) ->
-    case jsone:decode(Data) of
+handle_changes([Buf|Rest]) ->
+    case jsone:decode(Buf) of
         #{<<"type">> := <<"DELETED">>,
           <<"object">> := #{<<"metadata">> := #{<<"name">> := Name}}} ->
             ets:delete(?SERVER, Name);
