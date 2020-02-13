@@ -43,11 +43,26 @@ init([]) ->
          type => supervisor,
          modules => [erl_distribution]},
        #{id => endpoints,
-         start => {kube_endpoints, start_link, []},
+         start => {gen_event, start_link, [{local, kube_endpoints}]},
          restart => permanent,
          shutdown => infinity,
          type => worker,
-         modules => [kube_endpoints]
-        }]
+         modules => []
+        },
+       #{id => endpoints_watcher,
+         start => {kube_endpoints_watcher, start_link, []},
+         restart => permanent,
+         shutdown => infinity,
+         type => worker,
+         modules => [kube_endpoints_watcher]
+        },
+       #{id => proxy_sup,
+         start => {kube_proxy_sup, start_link, []},
+         restart => permanent,
+         shutdown => infinity,
+         type => supervisor,
+         modules => [kube_proxy_sup]
+        }
+      ]
      }
     }.
