@@ -35,13 +35,12 @@
 
 start_link(ServerName, Service, Options) ->
     [Node, _] = binary:split(atom_to_binary(node(), unicode), <<"@">>),
-    NodeName = proplists:get_value(nodename, Options, Node),
     Timeout = proplists:get_value(timeout, Options, 5000),
     Decay = proplists:get_value(decay, Options, 50000),
     Tau = float(erlang:convert_time_unit(Decay, millisecond, nanosecond)),
-    gen_server:start_link({local, ServerName}, ?MODULE, [ServerName, Service, NodeName, Timeout, Tau], []).
+    gen_server:start_link({local, ServerName}, ?MODULE, [ServerName, Service, Timeout, Tau], []).
 
-init([ServerName, Service, NodeName, Timeout, Tau]) ->
+init([ServerName, Service, Timeout, Tau]) ->
     ets:new(
       ServerName,
       [set,
@@ -53,14 +52,13 @@ init([ServerName, Service, NodeName, Timeout, Tau]) ->
     State =
         #{name => ServerName,
           service => Service,
-          node => NodeName,
           timeout => Timeout,
           tau => Tau,
           pids => #{}},
 
     kube_proxy_event:add_handler(self(), Service),
     case ets:lookup(kube_endpoints, Service) of
-        [{_, Names}] ->
+        [{_, NodeName, Names}] ->
             update_endpoints(ServerName, NodeName, Names);
         _ ->
             ok
@@ -77,7 +75,7 @@ handle_call(Request, From, State = #{name := Name, timeout := Timeout, tau := Ta
           end),
     {noreply, State#{pids := Pids#{Pid => {Mref, From}}}}.
 
-handle_cast({endpoints, Names}, State = #{name := ServerName, node := NodeName}) ->
+handle_cast({endpoints, NodeName, Names}, State = #{name := ServerName}) ->
     update_endpoints(ServerName, NodeName, Names),
     {noreply, State};
 handle_cast(_Request, State) ->

@@ -13,8 +13,8 @@ add_handler(Pid, Service) ->
 init([Pid, Service]) ->
     {ok, {Pid, Service}}.
 
-handle_event({Service, Names}, {Pid, Service} = State) ->
-    gen_server:cast(Pid, {endpoints, Names}),
+handle_event({Service, NodeName, Names}, {Pid, Service} = State) ->
+    gen_server:cast(Pid, {endpoints, NodeName, Names}),
     {ok, State};
 handle_event(_, State) ->
     {ok, State}.

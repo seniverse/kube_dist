@@ -76,17 +76,25 @@ handle_changes([Buf]) ->
 handle_changes([Buf|Rest]) ->
     case jsone:decode(Buf) of
         #{<<"type">> := <<"DELETED">>,
-          <<"object">> := #{<<"metadata">> := #{<<"name">> := Name}}} ->
+          <<"object">> :=
+              #{<<"metadata">> :=
+                    #{<<"name">> := Name,
+                      <<"annotations">> := #{<<"erlang.org/name">> := Node}}
+               }} ->
             ets:delete(?TAB, Name),
-            gen_event:notify(?TAB, {Name, []});
-        #{<<"object">> := #{<<"metadata">> := #{<<"name">> := Name}} = Object} ->
+            gen_event:notify(?TAB, {Name, Node, []});
+        #{<<"object">> :=
+              #{<<"metadata">> :=
+                    #{<<"name">> := Name,
+                      <<"annotations">> := #{<<"erlang.org/name">> := Node}}
+               } = Object} ->
             Subsets = maps:get(<<"subsets">>, Object, []),
             Names =
                 [ N
                   || #{<<"addresses">> := Addresses} <- Subsets,
                      #{<<"targetRef">> := #{<<"name">> := N} } <- Addresses ],
-            ets:insert(?TAB, {Name, Names}),
-            gen_event:notify(?TAB, {Name, Names});
+            ets:insert(?TAB, {Name, Node, Names}),
+            gen_event:notify(?TAB, {Name, Node, Names});
         Data ->
             ?LOG_DEBUG("Unknown endpoint ~p~n", [Data])
     end,

@@ -24,13 +24,10 @@ send(Name, Msg) ->
     end.
 
 whereis_name(Name) when is_atom(Name) ->
-    [Node, _] = binary:split(atom_to_binary(node(), unicode), <<"@">>),
-    whereis_name({Name, Node});
-whereis_name({Name, Node}) ->
     case ets:lookup(?MODULE, atom_to_binary(Name, unicode)) of
         [] ->
             undefined;
-        [{_, Names}] ->
+        [{_, Node, Names}] ->
             {Name, node_name(Node, lists:nth(rand:uniform(length(Names)), Names))}
     end.
 
