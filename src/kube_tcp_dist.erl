@@ -21,32 +21,39 @@ select(_) ->
 
 listen(Name) ->
     {ok, Host} = inet:gethostname(),
-    {ok, IP, Port, Creation} = kube_epmd:address(atom_to_list(Name), Host),
-    Address =
-        #net_address {
-           address = IP,
-           host = Host,
-           protocol = tcp,
-           family = inet},
+    case kube_epmd:address(atom_to_list(Name), Host) of
+        {ok, IP, Port, Creation} ->
+            Address =
+                #net_address {
+                   address = IP,
+                   host = Host,
+                   protocol = tcp,
+                   family = inet},
 
-    Opts =
-        case application:get_env(kernel, inet_dist_listen_options) of
-            {ok, ListenOpts} ->
-                ListenOpts;
-            _ ->
-                []
-        end ++
-        [{active, false},
-         {packet,2},
-         {reuseaddr, true},
-         {backlog,128}
-        ],
+            Opts =
+                case application:get_env(kernel, inet_dist_listen_options) of
+                    {ok, ListenOpts} ->
+                        ListenOpts;
+                    _ ->
+                        []
+                end ++
+                [{active, false},
+                 {packet,2},
+                 {reuseaddr, true},
+                 {backlog,128}
+                ],
 
-    case gen_tcp:listen(Port, Opts) of
-        {ok, Socket} ->
-            {ok, {Socket, Address, Creation}};
-        Error ->
-            Error
+            case gen_tcp:listen(Port, Opts) of
+                {ok, Socket} ->
+                    {ok, {Socket, Address, Creation}};
+                Error ->
+                    Error
+            end;
+        {error, not_ready} ->
+            receive
+            after 1000 ->
+                    listen(Name)
+            end
     end.
 
 accept(Listen) ->

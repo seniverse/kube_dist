@@ -75,34 +75,38 @@ resolve(Namespace, Token, [Pod|Rest]) ->
            [{body_format, binary}])
     of
         {ok, {{_, 200, _}, _, Body}} ->
-            #{<<"status">> :=
-                  #{<<"podIP">> := PodIP,
-                    <<"containerStatuses">> := Statuses},
-              <<"spec">> :=
-                  #{<<"containers">> := Containers}
-             } = jsone:decode(Body),
-            Names =
-                [ {binary_to_list(ContainerName), P}
-                  || #{<<"ports">> := Ports, <<"name">> := ContainerName} <- Containers,
-                     #{<<"containerPort">> := P, <<"name">> := PortName, <<"protocol">> := <<"TCP">>} <- Ports,
-                     PortName =:= <<ContainerName/binary, "-dist">>],
-            case Rest of
-                [] ->
-                    {ok, Names};
-                [Name] ->
-                    case [P || {N, P} <- Names, N =:= Name] of
+            case jsone:decode(Body) of
+                #{<<"status">> :=
+                      #{<<"podIP">> := PodIP,
+                        <<"containerStatuses">> := Statuses},
+                  <<"spec">> :=
+                      #{<<"containers">> := Containers}
+                 } ->
+                    Names =
+                        [ {binary_to_list(ContainerName), P}
+                          || #{<<"ports">> := Ports, <<"name">> := ContainerName} <- Containers,
+                             #{<<"containerPort">> := P, <<"name">> := PortName, <<"protocol">> := <<"TCP">>} <- Ports,
+                             PortName =:= <<ContainerName/binary, "-dist">>],
+                    case Rest of
                         [] ->
-                            {error, noport};
-                        [Port] ->
-                            {ok, Address} = inet:parse_strict_address(binary_to_list(PodIP)),
-                            ContainerName = list_to_binary(Name),
-                            [RestartCount] =
-                                [ C
-                                  || #{<<"name">> := N, <<"restartCount">> := C} <- Statuses,
-                                     N =:= ContainerName ],
-                            Creation = ((RestartCount + 1) rem 3) + 1,
-                            {ok, Address, Port, Creation}
-                    end
+                            {ok, Names};
+                        [Name] ->
+                            case [P || {N, P} <- Names, N =:= Name] of
+                                [] ->
+                                    {error, noport};
+                                [Port] ->
+                                    {ok, Address} = inet:parse_strict_address(binary_to_list(PodIP)),
+                                    ContainerName = list_to_binary(Name),
+                                    [RestartCount] =
+                                        [ C
+                                          || #{<<"name">> := N, <<"restartCount">> := C} <- Statuses,
+                                             N =:= ContainerName ],
+                                    Creation = ((RestartCount + 1) rem 3) + 1,
+                                    {ok, Address, Port, Creation}
+                            end
+                    end;
+                _ ->
+                    {error, not_ready}
             end;
         _ ->
             {error, nxdomain}
