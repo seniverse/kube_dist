@@ -180,7 +180,7 @@ pick(Endpoints, _) ->
 
 
 load({_, _, Pending, Cost, _}) when Cost == 0.0, Pending /= 0 ->
-    Pending + 32767;
+    Pending + 140737488355327.0;
 load({_, _, Pending, Cost, _}) ->
     Cost * (Pending + 1).
 
@@ -195,8 +195,8 @@ p2c(Endpoints) ->
             ok
     end,
 
-    EndpointA = lists:nth(A),
-    EndpointB = lists:nth(B),
+    EndpointA = lists:nth(A, Endpoints),
+    EndpointB = lists:nth(B, Endpoints),
     case load(EndpointA) =< load(EndpointB) of
         true ->
             EndpointA;
