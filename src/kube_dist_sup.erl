@@ -37,7 +37,7 @@ init([]) ->
          modules => [kube_dist_resolver_sup]
         },
        #{id => net_sup,
-         start => {erl_distribution, start_link, [[Name, shortnames], true]},
+         start => {erl_distribution, start_link, [[Name, shortnames], true, net_sup]},
          restart => permanent,
          shutdown => infinity,
          type => supervisor,
