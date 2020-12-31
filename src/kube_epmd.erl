@@ -14,7 +14,7 @@
 
 -behaviour(gen_server).
 
--export([start_link/0, names/1, address/2, address_please/3]).
+-export([start_link/0, names/1, address/2, address_please/3, listen_port_please/2, register_node/3]).
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2, code_change/3, format_status/2]).
@@ -34,11 +34,17 @@ address(Name, Host) ->
 
 address_please(Name, Host, inet) ->
     case gen_server:call(?SERVER, [Host, Name]) of
-        {ok, Address, Port, _} ->
+        {ok, Address, Port} ->
             {ok, Address, Port, 5};
         Error ->
             Error
     end.
+
+listen_port_please(_, _) ->
+    {ok, application:get_env(kube_dist, listen_port, 4370)}.
+
+register_node(_, _, inet_tcp) ->
+    {ok, -1}.
 
 init([]) ->
     {ok, []}.
@@ -97,12 +103,7 @@ resolve(Namespace, Token, [Pod|Rest]) ->
                                 [Port] ->
                                     {ok, Address} = inet:parse_strict_address(binary_to_list(PodIP)),
                                     ContainerName = list_to_binary(Name),
-                                    [RestartCount] =
-                                        [ C
-                                          || #{<<"name">> := N, <<"restartCount">> := C} <- Statuses,
-                                             N =:= ContainerName ],
-                                    Creation = ((RestartCount + 1) rem 3) + 1,
-                                    {ok, Address, Port, Creation}
+                                    {ok, Address}
                             end
                     end;
                 _ ->
